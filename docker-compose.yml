@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  shard-a:
+    image: postgres:14
+    container_name: pg-shard-a
+    environment:
+      POSTGRES_USER: repl
+      POSTGRES_PASSWORD: replpass
+      POSTGRES_DB: appdb
+    ports:
+      - "15432:5432"
+    volumes:
+      - shard-a-data:/var/lib/postgresql/data
+
+  shard-b:
+    image: postgres:14
+    container_name: pg-shard-b
+    environment:
+      POSTGRES_USER: repl
+      POSTGRES_PASSWORD: replpass
+      POSTGRES_DB: appdb
+    ports:
+      - "15433:5432"
+    volumes:
+      - shard-b-data:/var/lib/postgresql/data
+    
+  proxy:
+    image: haproxy:2.4
+    container_name: pg-proxy
+    depends_on:
+      - shard-a
+      - shard-b
+    ports:
+      - "6432:6432"                        # expose proxy on 6432
+    volumes:
+      - ./proxy:/usr/local/etc/haproxy:ro    # mount folder for easy swaps
+
+volumes:
+  shard-a-data:
+  shard-b-data:
